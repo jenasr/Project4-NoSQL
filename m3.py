@@ -114,7 +114,6 @@ async def retrieve_player_stats(unique_id: uuid.UUID):
         current_streak = looking_for[0][0]
     cur = db.execute("SELECT MAX(streak) FROM streaks WHERE unique_id = ?", [unique_id])
     looking_for = cur.fetchall()
-    ### WHY IS IT NONE??????????????????????????????????????????
     if looking_for:
         max_streak = looking_for[0][0]
         if max_streak == None:
@@ -153,20 +152,8 @@ async def retrieve_top_wins():
     """Getting the top 10 users by number of wins"""
     # use view: wins
     # Get number of wins
-    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
-    sqlite3.register_adapter(uuid.UUID, lambda u: memoryview(u.bytes_le))
-    con = sqlite3.connect("DB/Shards/stats1.db", detect_types=sqlite3.PARSE_DECLTYPES)
-    db = con.cursor()
-    db.execute("ATTACH DATABASE 'DB/Shards/user_profiles.db' As 'up'")
-    db.execute("ATTACH DATABASE 'DB/Shards/stats2.db' As 's2'")
-    db.execute("ATTACH DATABASE 'DB/Shards/stats3.db' AS 's3'")
-    cur = db.execute("SELECT username, number_won FROM wins JOIN up.users ON wins.unique_id=up.users.unique_id ORDER BY number_won DESC LIMIT 10")
-    looking_for = cur.fetchall()
-    cur = db.execute("SELECT username, number_won FROM s2.wins JOIN up.users ON s2.wins.unique_id=up.users.unique_id ORDER BY number_won DESC LIMIT 10")
-    looking_for += cur.fetchall()
-    cur = db.execute("SELECT username, number_won FROM s3.wins JOIN up.users ON s3.wins.unique_id=up.users.unique_id ORDER BY number_won DESC LIMIT 10")
-    looking_for += cur.fetchall()
-    looking_for.sort(key = lambda x: x[1], reverse=True)
+    set_key = f"Top 10 wins"
+    
     return {"TopWinners": looking_for[:10]}
 
 @app.get("/stats/streaks/")
