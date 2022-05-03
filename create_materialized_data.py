@@ -36,6 +36,8 @@ def make_top_10s(view_dec):
         r.zrem(set_key, tup[0])
     r.zadd(set_key, scores)
     p.execute()
+    con.close()
+    r.close()
 
 
 if __name__ == '__main__':
