@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from datetime import date
 from math import trunc
 import uuid
+import redis
 class Guesses(BaseModel):
         guess1: int = Field(0, alias='1')
         guess2: int = Field(0, alias='2')
@@ -152,27 +153,19 @@ async def retrieve_top_wins():
     """Getting the top 10 users by number of wins"""
     # use view: wins
     # Get number of wins
+    r = redis.Redis(host='localhost', port=6379, db=0)
     set_key = f"Top 10 wins"
-    r.zrevrange(set_key, 0, -1, withscores)
+    score_list = r.zrevrange(set_key, 0, -1, withscores = True)
 
-    return {"TopWinners": looking_for[:10]}
+    return {"TopWinners": score_list[:10]}
 
 @app.get("/stats/streaks/")
 async def retrieve_top_streaks(db: sqlite3.Connection = Depends(get_db)):
     """Getting the top 10 users by streak"""
     # use view: streaks
-    sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
-    sqlite3.register_adapter(uuid.UUID, lambda u: memoryview(u.bytes_le))
-    con = sqlite3.connect("DB/Shards/stats1.db", detect_types=sqlite3.PARSE_DECLTYPES)
-    db = con.cursor()
-    db.execute("ATTACH DATABASE 'DB/Shards/user_profiles.db' As 'up'")
-    db.execute("ATTACH DATABASE 'DB/Shards/stats2.db' As 's2'")
-    db.execute("ATTACH DATABASE 'DB/Shards/stats3.db' AS 's3'")
-    cur = db.execute("SELECT username, streak FROM streaks JOIN up.users ON streaks.unique_id=up.users.unique_id ORDER BY streak DESC LIMIT 10")
-    looking_for = cur.fetchall()
-    cur = db.execute("SELECT username, streak FROM s2.streaks JOIN up.users ON s2.streaks.unique_id=up.users.unique_id ORDER BY streak DESC LIMIT 10")
-    looking_for += cur.fetchall()
-    cur = db.execute("SELECT username, streak FROM s3.streaks JOIN up.users ON s3.streaks.unique_id=up.users.unique_id ORDER BY streak DESC LIMIT 10")
-    looking_for += cur.fetchall()
-    looking_for.sort(key = lambda x: x[1], reverse=True)
-    return {"Top10Streaks": looking_for[:10]}
+    r = redis.Redis(host='localhost', port=6379, db=0)
+    set_key = f"Top 10 streaks"
+    score_list = r.zrevrange(set_key, 0, -1, withscores = True)
+    for tup in score_list:
+        tup[0].decode("UTF-8")
+    return {"TopStreaks": [f"{tup[0]}: {tup[1]}" for tup in score_list[:10]]}
