@@ -168,4 +168,5 @@ async def retrieve_top_streaks(db: sqlite3.Connection = Depends(get_db)):
     score_list = r.zrevrange(set_key, 0, -1, withscores = True)
     for tup in score_list:
         tup[0].decode("UTF-8")
+    # NOT SURE HOW YOU WOULD LIKE US TO OUTPUT THESE?????????????????????
     return {"TopStreaks": [f"{tup[0]}: {tup[1]}" for tup in score_list[:10]]}
