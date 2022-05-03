@@ -23,14 +23,15 @@ def make_top_10s(view_dec):
     cur = db.execute(f"SELECT username, {column} FROM s3.{view_dec} JOIN up.users ON s3.{view_dec}.unique_id=up.users.unique_id ORDER BY {column} DESC LIMIT 10")
     looking_for += cur.fetchall()
     #looking_for.sort(key = lambda x: x[1])
-
     r = redis.Redis(host='localhost', port=6379, db=0)
     set_key = f"Top 10 {view_dec}"
     p = r.pipeline()
     p.multi()
-    for index, tup in enumerate(looking_for):
+    scores = {}
+    for tup in looking_for:
+        scores[tup[0]] = tup[1]
         r.zrem(set_key, tup[0])
-        r.zadd(set_key, tup[1], tup[0])
+    r.zadd(set_key, scores)
     p.execute()
 
 
