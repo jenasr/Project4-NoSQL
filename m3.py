@@ -157,7 +157,7 @@ async def retrieve_top_wins():
     set_key = f"Top 10 wins"
     score_list = r.zrevrange(set_key, 0, -1, withscores = True)
 
-    return {"TopWinners": score_list[:10]}
+    return {"TopWinners": [{"username": tup[0], "wins": tup[1]} for tup in score_list[:10]]}
 
 @app.get("/stats/streaks/")
 async def retrieve_top_streaks(db: sqlite3.Connection = Depends(get_db)):
@@ -169,4 +169,4 @@ async def retrieve_top_streaks(db: sqlite3.Connection = Depends(get_db)):
     for tup in score_list:
         tup[0].decode("UTF-8")
     # NOT SURE HOW YOU WOULD LIKE US TO OUTPUT THESE?????????????????????
-    return {"TopStreaks": [f"{tup[0]}: {tup[1]}" for tup in score_list[:10]]}
+    return {"TopStreaks": [{"username": tup[0], "streaks": tup[1]} for tup in score_list[:10]]}
